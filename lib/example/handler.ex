@@ -57,6 +57,7 @@ defmodule Example.Handler do
   @impl :elli_websocket_handler
   def websocket_init(_req, _opts) do
     %{"data" => %{"id" => session_id}, "janus" => "success"} = Janus.create_session()
+    {:ok, _pid} = Janus.subscribe(session_id)
 
     Logger.debug("created session #{session_id}")
 
@@ -68,6 +69,7 @@ defmodule Example.Handler do
 
     Logger.debug("created handle #{handle_id}")
 
+    # TODO can send with jsep later
     %{
       "janus" => "event",
       "plugindata" => %{
@@ -141,6 +143,11 @@ defmodule Example.Handler do
   def websocket_info(_req, :keepalive, %__MODULE__{session_id: session_id} = state) do
     Janus.send_keepalive(session_id)
     Process.send_after(self(), :keepalive, 30 * 1000)
+    {:ok, state}
+  end
+
+  def websocket_info(_req, msg, state) do
+    Logger.debug("websocket_info.msg: #{inspect(msg)}")
     {:ok, state}
   end
 
