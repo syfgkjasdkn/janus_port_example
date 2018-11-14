@@ -1,0 +1,6 @@
+%{
+  "elli": {:hex, :elli, "3.1.0", "3b0c46b549bac00db06ff79a87b69a7fe06f3b24e7e06858ff6ccd9654276785", [:rebar3], [], "hexpm"},
+  "elli_websocket": {:hex, :elli_websocket, "0.1.1", "e320eed2a7ff286c2dc6cb342f4d3073d97b0b32dd4b533bfe88bc585768875f", [:rebar3], [], "hexpm"},
+  "janus_port": {:git, "https://github.com/syfgkjasdkn/janus_port.git", "e5141cc08b1a8391e5bc490e6e270ae242b08f05", []},
+  "jason": {:hex, :jason, "1.1.2", "b03dedea67a99223a2eaf9f1264ce37154564de899fd3d8b9a21b1a6fd64afe7", [:mix], [{:decimal, "~> 1.0", [hex: :decimal, repo: "hexpm", optional: true]}], "hexpm"},
+}

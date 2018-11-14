@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head><title>janus demo</title><style>video{width:50%;}</style></head>
+<body><video id="me"></video><video id="echo"></video>
+<script>
+let ws = new WebSocket("ws://" + window.location.host + "/janus");
+
+function _send(data) {
+  console.log("sending", data);
+  ws.send(JSON.stringify(data));
+}
+
+let pc = new RTCPeerConnection({
+  iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+});
+
+const constraints = { audio: true, video: true };
+
+pc.oniceconnectionstatechange = evt => {
+  console.log("oniceconnectionstatechange", evt);
+};
+
+pc.onicecandidate = evt => {
+  if (evt.candidate) {
+    let candidate = {
+      candidate: evt.candidate.candidate,
+      sdpMid: evt.candidate.sdpMid,
+      sdpMLineIndex: evt.candidate.sdpMLineIndex
+    };
+
+    _send({ type: "candidate", data: candidate });
+  } else if (evt.candidate == null) {
+    _send({ type: "candidate", data: { completed: true } });
+  }
+};
+
+pc.ontrack = evt => {
+  console.log("handling remote track", evt);
+  let echo = document.getElementById("echo");
+  echo.srcObject = evt.streams[0];
+  echo.onloadedmetadata = e => echo.play();
+};
+
+ws.onopen = event => {
+  navigator.mediaDevices
+    .getUserMedia(constraints)
+    .then(stream => {
+      let me = document.getElementById("me");
+      me.srcObject = stream;
+      me.onloadedmetadata = e => me.play();
+      
+      pc.addStream(stream);
+      return pc.createOffer();
+    })
+    .then(offer => {
+      console.log("generated offer offer", offer);
+      return pc.setLocalDescription(offer);
+    })
+    .then(() => {
+      console.log("sending offer", pc.localDescription);
+      _send({ type: "offer", data: pc.localDescription });
+    })
+    .catch(err => {
+      console.log("getUserMedia or createOffer or setLocalDescription error", error);
+    });
+};
+
+ws.onmessage = event => {
+  console.log("received ws event", event);
+  let msg = JSON.parse(event.data);
+  switch (msg.type) {
+    case "candidate":
+      pc.setIceCandidate(msg.data);
+      break;
+    case "answer":
+      pc.setRemoteDescription({ type: "answer", sdp: msg.data });
+      break;
+  }
+};
+</script>
+</body>
+</html>
