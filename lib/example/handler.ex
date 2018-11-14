@@ -21,7 +21,7 @@ defmodule Example.Handler do
     {:ok, :handover}
   end
 
-  defp init_ws(params, _, _) do
+  defp init_ws(_params, _, _) do
     :ignore
   end
 
@@ -36,7 +36,7 @@ defmodule Example.Handler do
     handle(method, :elli_request.path(req), req, args)
   end
 
-  defp handle(:websocket, ["janus"], req, args) do
+  defp handle(:websocket, ["janus"], req, _args) do
     :elli_websocket.upgrade(req, handler: __MODULE__)
     {:close, ""}
   end
@@ -98,14 +98,14 @@ defmodule Example.Handler do
 
   defp _handle_in(
          "candidate",
-         %{"data" => candidate} = msg,
+         %{"data" => candidate},
          %__MODULE__{
            session_id: session_id,
            handle_id: handle_id
          } = state
        ) do
     :ok = Janus.send_trickle_candidate(session_id, handle_id, candidate)
-    {:pl, state}
+    {:ok, state}
   end
 
   defp _handle_in(
@@ -138,7 +138,7 @@ defmodule Example.Handler do
   end
 
   @impl :elli_websocket_handler
-  def websocket_info(:keepalive, _message, %__MODULE__{session_id: session_id} = state) do
+  def websocket_info(_req, :keepalive, %__MODULE__{session_id: session_id} = state) do
     Janus.send_keepalive(session_id)
     Process.send_after(self(), :keepalive, 30 * 1000)
     {:ok, state}
@@ -148,9 +148,5 @@ defmodule Example.Handler do
   def websocket_handle_event(name, data, state) do
     Logger.debug("websocket event: #{inspect(name: name, data: data, state: state)}")
     :ok
-  end
-
-  defp build_reply!(%{"type" => type, "ref" => ref}, reply) do
-    Jason.encode_to_iodata!(%{"type" => type, "data" => reply, "ref" => ref})
   end
 end
